@@ -1,0 +1,8 @@
+{
+  "name": "KeyPulse — Typing Mastery & Speed Tracking",
+  "description": "Distraction-free typing speed test, interactive touch typing academy, personalized performance analytics, local storage sync, and custom themes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

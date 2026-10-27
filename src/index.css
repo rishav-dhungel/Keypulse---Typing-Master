@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  /* 1. Dark Slate (Charcoal & Sky) */
+  [data-theme="dark-slate"], :root {
+    --theme-bg: #0b0f17;
+    --theme-surface: #111827;
+    --theme-subtle: #1a2233;
+    --theme-border: #1f293d;
+    --theme-border-subtle: #162030;
+    --theme-text-main: #f8fafc;
+    --theme-text-muted: #94a3b8;
+    --theme-text-faint: #64748b;
+    --theme-accent: #38bdf8;
+    --theme-accent-contrast: #0b0f17;
+    --theme-accent-glow: rgba(56, 189, 248, 0.18);
+    --char-future: #64748b;
+    --char-correct: #f8fafc;
+    --char-wrong: #f43f5e;
+    --char-wrong-bg: rgba(244, 63, 94, 0.22);
+    --caret: #38bdf8;
+  }
+
+  /* 2. Dark Amber (Hacker Terminal) */
+  [data-theme="dark-amber"] {
+    --theme-bg: #0f0d0b;
+    --theme-surface: #191613;
+    --theme-subtle: #24201b;
+    --theme-border: #2e2822;
+    --theme-border-subtle: #211c17;
+    --theme-text-main: #fef3c7;
+    --theme-text-muted: #d6d3d1;
+    --theme-text-faint: #78716c;
+    --theme-accent: #f59e0b;
+    --theme-accent-contrast: #0f0d0b;
+    --theme-accent-glow: rgba(245, 158, 11, 0.18);
+    --char-future: #857b6f;
+    --char-correct: #fef3c7;
+    --char-wrong: #ef4444;
+    --char-wrong-bg: rgba(239, 68, 68, 0.22);
+    --caret: #f59e0b;
+  }
+
+  /* 3. Dark Nord (Arctic Frost) */
+  [data-theme="dark-nord"] {
+    --theme-bg: #1e222a;
+    --theme-surface: #242933;
+    --theme-subtle: #2e3440;
+    --theme-border: #3b4252;
+    --theme-border-subtle: #2a303c;
+    --theme-text-main: #eceff4;
+    --theme-text-muted: #d8dee9;
+    --theme-text-faint: #78859a;
+    --theme-accent: #88c0d0;
+    --theme-accent-contrast: #1e222a;
+    --theme-accent-glow: rgba(136, 192, 208, 0.18);
+    --char-future: #6c7993;
+    --char-correct: #eceff4;
+    --char-wrong: #bf616a;
+    --char-wrong-bg: rgba(191, 97, 106, 0.22);
+    --caret: #88c0d0;
+  }
+
+  /* 4. Dark Forest (Emerald) */
+  [data-theme="dark-forest"] {
+    --theme-bg: #081410;
+    --theme-surface: #0f221c;
+    --theme-subtle: #16332a;
+    --theme-border: #1d4237;
+    --theme-border-subtle: #122b23;
+    --theme-text-main: #ecfdf5;
+    --theme-text-muted: #a7f3d0;
+    --theme-text-faint: #45826c;
+    --theme-accent: #10b981;
+    --theme-accent-contrast: #041a13;
+    --theme-accent-glow: rgba(16, 185, 129, 0.18);
+    --char-future: #467969;
+    --char-correct: #ecfdf5;
+    --char-wrong: #f87171;
+    --char-wrong-bg: rgba(248, 113, 113, 0.22);
+    --caret: #10b981;
+  }
+
+  /* 5. Dark Dracula (Cyber Violet) */
+  [data-theme="dark-dracula"] {
+    --theme-bg: #12101c;
+    --theme-surface: #1a1729;
+    --theme-subtle: #25213b;
+    --theme-border: #332d52;
+    --theme-border-subtle: #201c33;
+    --theme-text-main: #f0eef8;
+    --theme-text-muted: #b5b1cf;
+    --theme-text-faint: #757091;
+    --theme-accent: #c4a7e7;
+    --theme-accent-contrast: #12101c;
+    --theme-accent-glow: rgba(196, 167, 231, 0.18);
+    --char-future: #78719b;
+    --char-correct: #f0eef8;
+    --char-wrong: #eb6f92;
+    --char-wrong-bg: rgba(235, 111, 146, 0.22);
+    --caret: #c4a7e7;
+  }
+
+  /* 6. Light Paper (Crisp Minimalist) */
+  [data-theme="light-paper"] {
+    --theme-bg: #f8fafc;
+    --theme-surface: #ffffff;
+    --theme-subtle: #f1f5f9;
+    --theme-border: #e2e8f0;
+    --theme-border-subtle: #edf2f7;
+    --theme-text-main: #0f172a;
+    --theme-text-muted: #475569;
+    --theme-text-faint: #94a3b8;
+    --theme-accent: #2563eb;
+    --theme-accent-contrast: #ffffff;
+    --theme-accent-glow: rgba(37, 99, 235, 0.14);
+    --char-future: #64748b;
+    --char-correct: #0f172a;
+    --char-wrong: #dc2626;
+    --char-wrong-bg: rgba(220, 38, 38, 0.12);
+    --caret: #2563eb;
+  }
+
+  /* 7. Light Sepia (Warm Vintage Book) */
+  [data-theme="light-sepia"] {
+    --theme-bg: #fbf0d9;
+    --theme-surface: #f4e4c1;
+    --theme-subtle: #ead4a7;
+    --theme-border: #dfcd9f;
+    --theme-border-subtle: #e6d7ad;
+    --theme-text-main: #282828;
+    --theme-text-muted: #504945;
+    --theme-text-faint: #7c6f64;
+    --theme-accent: #b16286;
+    --theme-accent-contrast: #ffffff;
+    --theme-accent-glow: rgba(177, 98, 134, 0.16);
+    --char-future: #7c6f64;
+    --char-correct: #282828;
+    --char-wrong: #cc241d;
+    --char-wrong-bg: rgba(204, 36, 29, 0.14);
+    --caret: #b16286;
+  }
+
+  /* 8. Light Sand (Soft Sandstone) */
+  [data-theme="light-sand"] {
+    --theme-bg: #f4f4f5;
+    --theme-surface: #ffffff;
+    --theme-subtle: #e4e4e7;
+    --theme-border: #d4d4d8;
+    --theme-border-subtle: #e0e0e3;
+    --theme-text-main: #18181b;
+    --theme-text-muted: #52525b;
+    --theme-text-faint: #a1a1aa;
+    --theme-accent: #0284c7;
+    --theme-accent-contrast: #ffffff;
+    --theme-accent-glow: rgba(2, 132, 199, 0.14);
+    --char-future: #71717a;
+    --char-correct: #18181b;
+    --char-wrong: #e11d48;
+    --char-wrong-bg: rgba(225, 29, 72, 0.14);
+    --caret: #0284c7;
+  }
+
+  body {
+    background-color: var(--theme-bg);
+    color: var(--theme-text-main);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* Minimalist Clean Component Classes */
+.theme-bg {
+  background-color: var(--theme-bg);
+}
+
+.theme-surface {
+  background-color: var(--theme-surface);
+}
+
+.theme-subtle {
+  background-color: var(--theme-subtle);
+}
+
+.theme-border {
+  border-color: var(--theme-border);
+}
+
+.theme-border-subtle {
+  border-color: var(--theme-border-subtle);
+}
+
+.theme-text {
+  color: var(--theme-text-main);
+}
+
+.theme-text-muted {
+  color: var(--theme-text-muted);
+}
+
+.theme-text-faint {
+  color: var(--theme-text-faint);
+}
+
+.theme-accent {
+  color: var(--theme-accent);
+}
+
+.theme-btn-accent {
+  background-color: var(--theme-accent);
+  color: var(--theme-accent-contrast);
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.theme-btn-accent:hover {
+  filter: brightness(1.1);
+}
+
+@keyframes caret-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.caret-blink {
+  animation: caret-pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--theme-border);
+  border-radius: 9999px;
+}
