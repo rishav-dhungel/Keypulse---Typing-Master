@@ -63,13 +63,32 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
   const wordsWrapperRef = useRef<HTMLDivElement>(null);
   const activeWordRef = useRef<HTMLSpanElement>(null);
   const timerIntervalRef = useRef<number | null>(null);
+  const lastRecordedSecRef = useRef<number>(0);
+  const finishTestRef = useRef<(durationSec: number, explicitTyped?: string) => void>(() => {});
+
+  // Refs keeping mutable state in sync without re-triggering timer interval
+  const typedCharsRef = useRef(typedChars);
+  typedCharsRef.current = typedChars;
+
+  const targetTextRef = useRef(targetText);
+  targetTextRef.current = targetText;
+
+  const missedKeysRef = useRef(missedKeys);
+  missedKeysRef.current = missedKeys;
+
+  const speedSamplesRef = useRef(speedSamples);
+  speedSamplesRef.current = speedSamples;
 
   const [scrollOffset, setScrollOffset] = useState<number>(0);
 
   // Initialize or reset test text
   const setupNewTest = useCallback(
     (customText?: string) => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      lastRecordedSecRef.current = 0;
 
       let text = '';
       if (customText) {
@@ -116,17 +135,19 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
   const personalBest = records.length > 0 ? Math.max(...records.map((r) => r.wpm)) : 0;
 
-  // Real-time calculation helpers
+  // Real-time calculation helpers (accessing latest text via ref to prevent effect churn)
   const calculateLiveStats = useCallback(() => {
     if (!startTime) return { liveWpm: 0, liveRawWpm: 0, liveAccuracy: 100, correctChars: 0, errorCount: 0 };
 
     const elapsedSeconds = Math.max(0.5, (Date.now() - startTime) / 1000);
+    const chars = typedCharsRef.current;
+    const target = targetTextRef.current;
     let correctChars = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < typedChars.length; i++) {
-      if (i < targetText.length) {
-        if (typedChars[i] === targetText[i]) {
+    for (let i = 0; i < chars.length; i++) {
+      if (i < target.length) {
+        if (chars[i] === target[i]) {
           correctChars++;
         } else {
           errorCount++;
@@ -136,38 +157,45 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
       }
     }
 
-    const liveRawWpm = Math.round((typedChars.length / 5) / (elapsedSeconds / 60));
+    const liveRawWpm = Math.round((chars.length / 5) / (elapsedSeconds / 60));
     const liveWpm = Math.max(0, Math.round((correctChars / 5) / (elapsedSeconds / 60)));
-    const liveAccuracy = typedChars.length > 0 ? Math.round((correctChars / typedChars.length) * 100) : 100;
+    const liveAccuracy = chars.length > 0 ? Math.round((correctChars / chars.length) * 100) : 100;
 
     return { liveWpm, liveRawWpm, liveAccuracy, correctChars, errorCount };
-  }, [startTime, typedChars, targetText]);
+  }, [startTime]);
 
   // Finalize test and record metrics
   const finishTest = useCallback(
-    (durationSec: number) => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+    (durationSec: number, explicitTyped?: string) => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
       setIsFinished(true);
 
+      const currentTyped = explicitTyped ?? typedCharsRef.current;
+      const currentTarget = targetTextRef.current;
+      const currentMissed = missedKeysRef.current;
+      const currentSamples = speedSamplesRef.current;
       const elapsed = Math.max(1, durationSec);
       let correctCount = 0;
       let errorCount = 0;
 
-      for (let i = 0; i < typedChars.length; i++) {
-        if (i < targetText.length && typedChars[i] === targetText[i]) {
+      for (let i = 0; i < currentTyped.length; i++) {
+        if (i < currentTarget.length && currentTyped[i] === currentTarget[i]) {
           correctCount++;
         } else {
           errorCount++;
         }
       }
 
-      const rawWpm = Math.round((typedChars.length / 5) / (elapsed / 60));
+      const rawWpm = Math.round((currentTyped.length / 5) / (elapsed / 60));
       const wpm = Math.max(0, Math.round((correctCount / 5) / (elapsed / 60)));
-      const accuracy = typedChars.length > 0 ? Number(((correctCount / typedChars.length) * 100).toFixed(1)) : 100;
+      const accuracy = currentTyped.length > 0 ? Number(((correctCount / currentTyped.length) * 100).toFixed(1)) : 100;
 
       let consistency = 88;
-      if (speedSamples.length > 3) {
-        const wpms = speedSamples.map((s) => s.wpm);
+      if (currentSamples.length > 3) {
+        const wpms = currentSamples.map((s) => s.wpm);
         const mean = wpms.reduce((a, b) => a + b, 0) / wpms.length;
         const variance = wpms.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / wpms.length;
         const stdDev = Math.sqrt(variance);
@@ -186,10 +214,10 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         modeParam: mode === 'time' ? timeDuration : mode === 'words' ? wordCount : quoteLength,
         errorCount,
         correctCount,
-        totalChars: typedChars.length,
+        totalChars: currentTyped.length,
         consistency,
-        missTypedKeys: missedKeys,
-        speedTimeline: speedSamples,
+        missTypedKeys: currentMissed,
+        speedTimeline: currentSamples,
       };
 
       setLastFinishedRecord(record);
@@ -201,39 +229,60 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
       }
     },
-    [typedChars, targetText, mode, timeDuration, wordCount, quoteLength, missedKeys, speedSamples, onTestComplete, personalBest]
+    [mode, timeDuration, wordCount, quoteLength, onTestComplete, personalBest]
   );
 
+  // Keep ref up-to-date for timers and callbacks
+  finishTestRef.current = finishTest;
+
   // Timer loop for time mode & timeline sampling
+  // Decoupled completely from keystroke frequency and accuracy
   useEffect(() => {
     if (!startTime || isFinished) return;
 
+    let lastSampledSec = 0;
+
+    // Tick at 200ms interval for fluid, drift-free countdown and uninterrupted execution
     timerIntervalRef.current = window.setInterval(() => {
-      const elapsedSec = (Date.now() - startTime) / 1000;
-      const currentStats = calculateLiveStats();
-      setSpeedSamples((prev) => [
-        ...prev,
-        {
-          second: Math.round(elapsedSec),
-          wpm: currentStats.liveWpm,
-          rawWpm: currentStats.liveRawWpm,
-          errors: currentStats.errorCount,
-        },
-      ]);
+      const now = Date.now();
+      const elapsedSec = (now - startTime) / 1000;
+      const currentSecFloor = Math.floor(elapsedSec);
+
+      // Record speed snapshot once per elapsed second
+      if (currentSecFloor > lastSampledSec) {
+        lastSampledSec = currentSecFloor;
+        const currentStats = calculateLiveStats();
+        setSpeedSamples((prev) => [
+          ...prev,
+          {
+            second: currentSecFloor,
+            wpm: currentStats.liveWpm,
+            rawWpm: currentStats.liveRawWpm,
+            errors: currentStats.errorCount,
+          },
+        ]);
+      }
 
       if (mode === 'time') {
         const remaining = Math.max(0, Math.ceil(timeDuration - elapsedSec));
         setTimeLeft(remaining);
         if (remaining <= 0) {
-          finishTest(timeDuration);
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          finishTestRef.current(timeDuration);
         }
       }
-    }, 1000);
+    }, 200);
 
     return () => {
-      if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
     };
-  }, [startTime, isFinished, mode, timeDuration, finishTest, calculateLiveStats]);
+  }, [startTime, isFinished, mode, timeDuration, calculateLiveStats]);
 
   // Handle typing input
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -278,7 +327,7 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
 
     if ((mode === 'words' || mode === 'quote' || mode === 'weak-keys') && value.length >= targetText.length) {
       const elapsed = startTime ? (Date.now() - startTime) / 1000 : 1;
-      finishTest(elapsed);
+      finishTest(elapsed, value);
     }
   };
 
@@ -553,35 +602,33 @@ export const TypingArena: React.FC<TypingArenaProps> = ({
           className="relative w-full max-w-4xl p-6 sm:p-8 rounded-2xl theme-surface border theme-border shadow-sm cursor-text transition-all"
         >
           {/* Subtle Live Stats Indicator */}
-          {startTime && (
-            <div className="flex items-center gap-6 mb-4 text-sm font-mono theme-text-muted tabular-nums">
-              {mode === 'time' && (
-                <div className="flex items-center gap-1.5 theme-accent font-bold text-lg">
-                  <Clock className="w-4 h-4" />
-                  <span>{timeLeft}s</span>
-                </div>
-              )}
-              {mode !== 'time' && (
-                <div className="flex items-center gap-1.5">
-                  <span>{typedChars.length}</span>
-                  <span className="opacity-50">/</span>
-                  <span>{targetText.length}</span>
-                </div>
-              )}
-              {settings.showLiveWpm && (
-                <div className="flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 theme-accent" />
-                  <span>{liveWpm} WPM</span>
-                </div>
-              )}
-              {settings.showLiveAccuracy && (
-                <div className="flex items-center gap-1.5">
-                  <Target className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{liveAccuracy}% ACC</span>
-                </div>
-              )}
-            </div>
-          )}
+          <div className="flex items-center gap-6 mb-4 text-sm font-mono theme-text-muted tabular-nums min-h-[28px]">
+            {mode === 'time' && (
+              <div className="flex items-center gap-1.5 theme-accent font-bold text-lg">
+                <Clock className="w-4 h-4" />
+                <span>{timeLeft}s</span>
+              </div>
+            )}
+            {mode !== 'time' && (
+              <div className="flex items-center gap-1.5 font-medium">
+                <span>{typedChars.length}</span>
+                <span className="opacity-50">/</span>
+                <span>{targetText.length}</span>
+              </div>
+            )}
+            {startTime && settings.showLiveWpm && (
+              <div className="flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5 theme-accent" />
+                <span>{liveWpm} WPM</span>
+              </div>
+            )}
+            {startTime && settings.showLiveAccuracy && (
+              <div className="flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-emerald-400" />
+                <span>{liveAccuracy}% ACC</span>
+              </div>
+            )}
+          </div>
 
           {/* Hidden Input */}
           <input
